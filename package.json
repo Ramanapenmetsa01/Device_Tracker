@@ -1,0 +1,45 @@
+{
+  "name": "device-tracker",
+  "version": "1.0.0",
+  "description": "A comprehensive device tracking system with real-time location monitoring, user management, and activity logging",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "device-tracking",
+    "location-tracking",
+    "user-management",
+    "real-time",
+    "nodejs",
+    "express",
+    "mysql",
+    "leaflet",
+    "qr-code"
+  ],
+  "author": "Ramana Penmetsa <ramanavarma9999@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ramanapenmetsa01/Device_Tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ramanapenmetsa01/Device_Tracker/issues"
+  },
+  "homepage": "https://github.com/Ramanapenmetsa01/Device_Tracker#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.1",
+    "mysql": "^2.18.1",
+    "nodemailer": "^7.0.3",
+    "qrcode-generator": "^1.5.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

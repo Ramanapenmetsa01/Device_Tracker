@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - AddWise</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="signup.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="notification-bar"></div>
+    <div class="container">
+        <div class="header">
+            <h1>Sign Up</h1>
+        </div>
+        <div class="toggle-switch">
+            <button class="toggle-button active" id="user-signup-toggle">User</button>
+            <button class="toggle-button" id="admin-signup-toggle">Admin</button>
+        </div>
+        <form class="signup-form">
+            <div class="input-group">
+                <label class="input-label">
+                    <input type="text" id="signup-name" required placeholder=" ">
+                    <span class="floating-label">Full Name</span>
+                </label>
+            </div>
+            <div class="input-group">
+                <label class="input-label">
+                    <input type="email" id="signup-email" required placeholder=" ">
+                    <span class="floating-label">Email address</span>
+                </label>
+            </div>
+            <div class="input-group">
+                <label class="input-label">
+                    <input type="password" id="signup-password" required placeholder=" ">
+                    <span class="floating-label">Password</span>
+                    <i class="password-toggle fas fa-eye-slash" id="signup-password-toggle"></i>
+                </label>
+            </div>
+            <div class="input-group" id="admin-code-group" style="display: none;">
+                <label class="input-label">
+                    <input type="text" id="admin-code" placeholder=" ">
+                    <span class="floating-label">Admin Special Code</span>
+                </label>
+            </div>
+            <button type="submit" class="login-button">Sign Up</button>
+            <div class="button-spacing"></div>
+            <p class="signup-text">Already have an account? <a href="index.html">Login</a></p>
+        </form>
+    </div>
+    <script src="notification.js"></script>
+    <script src="signup.js"></script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); /* Dark blue-grey gradient */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #ecf0f1; /* Light text for dark background */
+    overflow: hidden;
+}
+
+.container {
+    background: rgba(0, 0, 0, 0.6); /* Slightly more transparent dark container */
+    padding: 45px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); /* More prominent, darker shadow */
+    text-align: center;
+    width: 420px;
+    max-width: 90%;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Very subtle white border */
+    position: relative;
+}
+.container::before {
+    display: none;
+}
+.container > * {
+    position: relative;
+    z-index: 1;
+}
+
+.header .logo {
+    width: 150px;
+    margin-bottom: 25px;
+}
+
+.header h1 {
+    color: #ecf0f1; /* Lighter heading color */
+    margin-bottom: 40px;
+    font-size: 2.4em;
+    letter-spacing: 1px;
+}
+
+.toggle-switch {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 35px;
+    background-color: rgba(255, 255, 255, 0.15); /* Subtle transparent background */
+    border-radius: 25px;
+    overflow: hidden;
+    padding: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    box-shadow: none;
+}
+
+.toggle-button {
+    flex: 1;
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #bdc3c7;
+    transition: background 0.3s, color 0.3s;
+    border-radius: 22px;
+    position: relative;
+    z-index: 1;
+}
+
+.toggle-button.active {
+    background: #27ae60; /* Vibrant green for active state */
+    color: #fff;
+    box-shadow: none;
+}
+
+.toggle-switch::before {
+    display: none;
+}
+
+/* Floating label functionality */
+.input-label {
+    display: block;
+    position: relative;
+}
+.input-label input {
+    width: 100%;
+    padding: 16px 0 12px 0;
+    border: none;
+    border-bottom: 2px solid #555;
+    background: transparent;
+    font-size: 17px;
+    outline: none;
+    transition: border-color 0.3s;
+    color: #ecf0f1;
+    box-sizing: border-box;
+}
+.input-label input:focus {
+    border-color: #27ae60;
+    border-bottom: 2px solid #27ae60;
+    border-image: none;
+}
+.floating-label {
+    position: absolute;
+    left: 0;
+    top: 16px;
+    font-size: 17px;
+    color: #bdc3c7;
+    pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    opacity: 0.85;
+}
+.input-label input:focus + .floating-label,
+.input-label input:not(:placeholder-shown) + .floating-label {
+    top: 0px;
+    font-size: 13px;
+    color: #27ae60;
+    opacity: 1;
+    background: transparent;
+}
+.input-label input:not(:focus):placeholder-shown + .floating-label {
+    top: 16px;
+    font-size: 17px;
+    color: #bdc3c7;
+    opacity: 0.85;
+}
+.input-label input::placeholder {
+    color: transparent;
+}
+
+/* Autofill fix for dark background */
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:focus,
+.input-group input:-webkit-autofill:hover,
+.input-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #23272f inset !important;
+    box-shadow: 0 0 0 1000px #23272f inset !important;
+    -webkit-text-fill-color: #ecf0f1 !important;
+    caret-color: #ecf0f1 !important;
+    border-bottom: 2px solid #27ae60 !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Spacing below login/signup button */
+.button-spacing {
+    height: 18px;
+}
+
+.login-button {
+    width: 100%;
+    padding: 16px;
+    background: #27ae60; /* A darker color from the gradient */
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 19px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    margin-top: 15px;
+    box-shadow: none;
+}
+.login-button:hover {
+    background: #229a55;
+}
+.login-button:active {
+    background: #229a55;
+}
+
+.forgot-password {
+    color: #2ecc71; /* Vibrant color from palette */
+    transition: color 0.3s;
+}
+.forgot-password:hover {
+    color: #27ae60;
+}
+
+.signup-text {
+    margin-top: 30px;
+    color: #666;
+    font-size: 16px;
+}
+.signup-text a {
+    color: #2ecc71; /* Vibrant color from palette */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+.signup-text a:hover {
+    color: #27ae60;
+}
+
+/* Notification bar styles: slide in from right, fixed position */
+.notification-bar {
+    position: fixed;
+    top: 32px;
+    right: 32px;
+    min-width: 320px;
+    max-width: 90vw;
+    margin: 0;
+    padding: 18px 32px 14px 20px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    background: #27ae60;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translateX(120%);
+    transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+.notification-bar.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+.notification-bar-content {
+    width: 100%;
+    margin-bottom: 6px;
+}
+.notification-bar.success {
+    background: #27ae60;
+}
+.notification-bar.error {
+    background: #e74c3c;
+}
+.notification-bar.success .notification-progress {
+    background: #a8e063;
+}
+.notification-bar.error .notification-progress {
+    background: #ffb3b3;
+}
+.notification-progress {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    margin-top: 0;
+    margin-bottom: 2px;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform linear;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal.show {
+    opacity: 1;
+}
+
+.modal-content {
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 15px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ecf0f1;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #bdc3c7;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close-btn:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 15px 25px 20px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ecf0f1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.3s;
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Timer and resend button styles */
+#timer-container {
+    margin-top: 15px;
+    text-align: center;
+    color: #bdc3c7;
+    font-size: 14px;
+}
+
+#timer {
+    font-weight: bold;
+    color: #27ae60;
+}
+
+#resend-btn {
+    display: block;
+    margin: 15px auto 0;
+    background: transparent;
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.3s, color 0.3s;
+}
+
+#resend-btn:hover {
+    background: rgba(46, 204, 113, 0.1);
+}
+
+/* Password toggle icon styles */
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #bdc3c7;
+    transition: color 0.3s;
+    z-index: 2;
+}
+
+.password-toggle:hover {
+    color: #27ae60;
+}
+
+/* Adjust input padding to accommodate the icon */
+.input-label input[type="password"],
+.input-label input[type="text"] {
+    padding-right: 40px;
+}
+
+/* Modal overlay styles - ensure it covers everything */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 2000; /* Increase z-index to ensure it's above everything */
+}
+
+/* Add styles for when modal is active to hide background content */
+body.modal-open {
+    overflow: hidden; /* Prevent scrolling when modal is open */
+}
+
+/* Add animation for password toggle */
+.password-toggle.fa-eye,
+.password-toggle.fa-eye-slash {
+    transition: all 0.2s ease;
+}
+
+.password-toggle:active {
+    transform: translateY(-50%) scale(0.9);
+}
+/* Add these styles to the end of your style.css file */
+
+/* Improved notification styles */
+.notification-bar {
+    z-index: 9999 !important; /* Ensure notifications appear above everything */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important; /* Enhanced shadow */
+    border: 2px solid rgba(255, 255, 255, 0.2) !important; /* More visible border */
+}
+
+/* Ensure modal doesn't block notifications */
+.modal {
+    z-index: 2000; /* Lower than notifications but higher than other content */
+}
+
+/* Add animation to notifications for better visibility */
+@keyframes notification-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.notification-bar {
+    animation: notification-pulse 1s ease-in-out;
+}
+
+/* Ensure the container is properly shown/hidden */
+.container {
+    transition: opacity 0.3s ease, display 0.3s ease;
+}

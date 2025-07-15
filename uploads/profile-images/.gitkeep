@@ -1,0 +1,2 @@
+# This file ensures the uploads/profile-images directory is tracked by git
+# The directory is needed for profile image uploads but the actual uploaded files are ignored

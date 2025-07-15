@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AddWise</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="notification-bar"></div>
+    <div id="modal-overlay"></div>
+    <div class="container">
+        <div class="header">
+            <h1>Login</h1>
+        </div>
+        <div class="toggle-switch">
+            <button class="toggle-button active" id="user-toggle">User</button>
+            <button class="toggle-button" id="admin-toggle">Admin</button>
+            <button class="toggle-button" id="super-admin-toggle">Super Admin</button>
+        </div>
+        <form class="login-form">
+            <div class="input-group">
+                <label class="input-label">
+                    <input type="email" id="email" required placeholder=" ">
+                    <span class="floating-label">Email address</span>
+                </label>
+            </div>
+            <div class="input-group">
+                <label class="input-label">
+                    <input type="password" id="password" required placeholder=" ">
+                    <span class="floating-label">Password</span>
+                    <i class="password-toggle fas fa-eye-slash" id="password-toggle"></i>
+                </label>
+            </div>
+            <button type="submit" class="login-button">Login</button>
+            <div class="button-spacing"></div>
+            <a href="#" class="forgot-password">Forgot Password?</a>
+            <p class="signup-text">Don't have an account? <a href="signup.html">Sign up</a></p>
+        </form>
+    </div>
+    <script src="notification.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
