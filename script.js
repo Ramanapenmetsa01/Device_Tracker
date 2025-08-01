@@ -90,6 +90,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    //for checking for redirecting 
+     const token=localStorage.getItem("userToken")||localStorage.getItem("adminToken")||localStorage.getItem("superAdminToken")
+    fetch("/checking",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json",
+        },
+        body:JSON.stringify({token})
+    })
+    .then(response=>response.json())
+    .then(data=>{
+        if(data.success){
+            const role=data.role
+            if(role==="user"){window.location.href="/user/dashboard.html"}
+            else if(role==="admin"){window.location.href="/admin/dashboard.html"}
+            else{window.location.href="/superadmin/dashboard.html"}
+        }
+    })
+    .catch (error=> {
+        console.error('Error during login:', error);
+    })
     // Forgot password functionality
     forgotPasswordLink.addEventListener('click', (e) => {
         e.preventDefault();

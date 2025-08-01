@@ -1144,3 +1144,461 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Activity History Styles */
+.activity-history {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px;
+    border-bottom: 1px solid #f0f0f0;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.activity-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.activity-header h2 i {
+    color: var(--info-color);
+}
+
+.activity-filter {
+    position: relative;
+}
+
+.filter-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn:hover {
+    background: var(--secondary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.filter-btn i:last-child {
+    transition: transform 0.3s ease;
+}
+
+.filter-btn.active i:last-child {
+    transform: rotate(180deg);
+}
+
+.activity-filter-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    min-width: 280px;
+    z-index: 1000;
+    display: none;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.filter-quick-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-option-btn {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #495057;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.filter-option-btn:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.filter-option-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.custom-date-section {
+    padding: 16px;
+    display: none;
+}
+
+.date-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.date-input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.date-input-group input {
+    padding: 10px 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: border-color 0.2s ease;
+}
+
+.date-input-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(52, 73, 94, 0.1);
+}
+
+.date-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.apply-btn, .cancel-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.apply-btn {
+    background: var(--success-color);
+    color: white;
+}
+
+.apply-btn:hover {
+    background: #229954;
+}
+
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #5a6268;
+}
+
+.activity-feed-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.activity-feed {
+    padding: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 20px 25px;
+    border-bottom: 1px solid #f8f9fa;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.activity-item:hover {
+    background: #f8f9fa;
+    transform: translateX(2px);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.activity-icon.login { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.activity-icon.logout { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+.activity-icon.device_create { background: linear-gradient(135deg, #3498db, #2980b9); }
+.activity-icon.device_delete { background: linear-gradient(135deg, #e67e22, #d35400); }
+.activity-icon.device_link { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+.activity-icon.device_unlink { background: linear-gradient(135deg, #f39c12, #e67e22); }
+.activity-icon.user_create { background: linear-gradient(135deg, #1abc9c, #16a085); }
+.activity-icon.user_delete { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+.activity-icon.user_block { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+.activity-icon.user_unblock { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.activity-icon.profile_update { background: linear-gradient(135deg, #3498db, #2980b9); }
+.activity-icon.password_change { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-description {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: #2c3e50;
+    line-height: 1.4;
+}
+
+.activity-time {
+    font-size: 13px;
+    color: #7f8c8d;
+    font-weight: 400;
+}
+
+.loading-state, .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: #7f8c8d;
+}
+
+.loading-state i, .empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #bdc3c7;
+}
+
+.loading-state i {
+    color: var(--primary-color);
+}
+
+.loading-state p, .empty-state p {
+    margin: 8px 0 0 0;
+    font-size: 16px;
+    color: #7f8c8d;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    color: #95a5a6;
+    font-weight: 600;
+}
+
+/* Activity Details Modal Styles */
+.activity-modal {
+    display: none;
+    position: fixed;
+    z-index: 10001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.activity-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.activity-modal .modal-content {
+    background-color: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.activity-modal .modal-content h3 {
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.activity-details {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.activity-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.activity-detail-row:last-child {
+    border-bottom: none;
+}
+
+.activity-detail-row strong {
+    color: #555;
+    font-weight: 600;
+    min-width: 120px;
+    flex-shrink: 0;
+}
+
+.activity-detail-value {
+    color: #6c757d;
+    word-break: break-all;
+    text-align: right;
+    flex: 1;
+    margin-left: 15px;
+}
+
+.activity-modal .modal-actions {
+    margin-top: 25px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 20px;
+}
+
+.activity-modal .modal-actions .cancel-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.activity-modal .modal-actions .cancel-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+}
+
+/* Close button for modal */
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+/* Responsive activity styles */
+@media (max-width: 768px) {
+    .activity-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .activity-filter-dropdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 320px;
+    }
+
+    .filter-quick-options {
+        grid-template-columns: 1fr;
+    }
+
+    .date-inputs {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .activity-detail-value {
+        text-align: left;
+        margin-left: 0;
+    }
+
+    .activity-modal .modal-content {
+        margin: 20px;
+        padding: 20px;
+        max-width: none;
+        width: calc(100% - 40px);
+    }
+}

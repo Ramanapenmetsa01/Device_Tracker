@@ -186,16 +186,54 @@ function updateDeviceIdsTable() {
             console.error('Error creating activity_logs table:', err);
         } else {
             console.log('activity_logs table created or already exists');
+
+            // Add missing admin activity types to enum if they don't exist
+            const alterActivityLogsTable = `
+                ALTER TABLE activity_logs
+                MODIFY COLUMN action_type ENUM(
+                    'login', 'logout', 'device_create', 'device_delete', 'device_link', 'device_unlink',
+                    'user_create', 'user_delete', 'user_block', 'user_unblock',
+                    'admin_delete', 'admin_block', 'admin_unblock',
+                    'profile_update', 'password_change'
+                ) NOT NULL
+            `;
+
+            db.query(alterActivityLogsTable, (alterErr) => {
+                if (alterErr) {
+                    console.log('Activity logs enum already up to date or error updating:', alterErr.message);
+                } else {
+                    console.log('Activity logs enum updated with admin activity types');
+                }
+            });
+        }
+    });
+    db.query(createActivityLogsTable, (err) => {
+        if (err) {
+            console.error('Error creating activity_logs table:', err);
+        } else {
+            console.log('activity_logs table created or already exists');
+
+            // Add missing admin activity types to enum if they don't exist
+            const alterActivityLogsTable = `
+                ALTER TABLE activity_logs MODIFY user_role ENUM('user', 'admin', 'super-admin') NOT NULL`;
+
+            db.query(alterActivityLogsTable, (alterErr) => {
+                if (alterErr) {
+                    console.log('Activity logs enum already up to date or error updating:', alterErr.message);
+                } else {
+                    console.log('Activity logs enum updated with admin activity types');
+                }
+            });
         }
     });
 
 }
 
 // JWT Secret Key
-const JWT_SECRET = 'addwise-secret-key';
-
+const JWT_SECRET = process.env.JWT_SECRET;
 // Helper function to log activities
 function logActivity(userEmail, userRole, actionType, actionDescription, targetEntity = null, req = null) {
+   
     const ipAddress = req ? (req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown') : null;
     const userAgent = req ? req.headers['user-agent'] : null;
 
@@ -204,7 +242,8 @@ function logActivity(userEmail, userRole, actionType, actionDescription, targetE
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(insertActivityQuery, [userEmail, userRole, actionType, actionDescription, targetEntity, ipAddress, userAgent], (err) => {
+
+    db.query(insertActivityQuery, [userEmail, userRole, actionType, actionDescription, targetEntity, ipAddress, userAgent], (err, result) => {
         if (err) {
             console.error('Error logging activity:', err);
         }
@@ -307,9 +346,22 @@ app.post('/login', (req, res) => {
         });
     });
 });
-
-// Route for logout
-app.post('/api/logout', verifyToken, (req, res) => {
+//Route for checking for redirecting
+app.post("/checking",(req,res)=>{
+    const token = req.body.token // Bearer TOKEN format
+    if (!token) {
+        return res.json({ success: false, message: 'Access denied. No token provided.' });
+    }
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, JWT_SECRET);
+         res.json({success:true,role:decoded.role})
+    } catch (error) {
+        res.status(401).json({ success: false, message: 'Invalid token.' });
+    }
+})
+// Route for admin logout
+app.post('/api/admin/logout', verifyToken, (req, res) => {
     const userEmail = req.user.email;
     const userRole = req.user.role;
 
@@ -318,6 +370,18 @@ app.post('/api/logout', verifyToken, (req, res) => {
 
     res.json({ success: true, message: 'Logged out successfully' });
 });
+// Route for super-admin logout
+
+app.post('/api/superadmin/logout', verifyToken, (req, res) => {
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+
+    // Log logout activity
+    logActivity(userEmail, userRole, 'logout', 'User logged out', null, req);
+
+    res.json({ success: true, message: 'Logged out successfully' });
+});
+
 
 // Route for signup
 app.post('/signup', (req, res) => {
@@ -462,7 +526,6 @@ app.delete('/api/device-ids/:id', (req, res) => {
                 return res.status(500).json({ success: false, message: 'Database error' });
             }
 
-            console.log(`Deleted ${locationResult.affectedRows} location records for device ${deviceId}`);
 
             // Then delete the device ID
             const deleteQuery = 'DELETE FROM device_ids WHERE device_id = ?';
@@ -472,8 +535,9 @@ app.delete('/api/device-ids/:id', (req, res) => {
                     return res.status(500).json({ success: false, message: 'Database error' });
                 }
 
-                // Log device deletion activity
-                logActivity(adminEmail, 'admin', 'device_delete', `Deleted device ${deviceId}`, deviceId, req);
+                // Log device deletion activity (works for both admin and super admin)
+                const userRole = req.user.role; // Get actual role from token
+                logActivity(adminEmail, userRole, 'device_delete', `Deleted device ${deviceId}`, deviceId, req);
 
                 res.json({
                     success: true,
@@ -663,8 +727,9 @@ app.delete('/api/users/:id', verifyToken, (req, res) => {
                         return res.status(500).json({ success: false, message: 'Database error' });
                     }
 
-                    // Log admin activity for user deletion
-                    logActivity(adminEmail, 'admin', 'user_delete', `Deleted user ${userEmail}`, userEmail, req);
+                    // Log activity for user deletion (works for both admin and super admin)
+                    const userRole = req.user.role; // Get actual role from token
+                    logActivity(adminEmail, userRole, 'user_delete', `Deleted user ${userEmail}`, userEmail, req);
 
                     const unassignedCount = unassignResult.affectedRows;
                     const deletedActivityCount = activityResult.affectedRows;
@@ -675,7 +740,7 @@ app.delete('/api/users/:id', verifyToken, (req, res) => {
                     if (deletedActivityCount > 0) {
                         message += ` and ${deletedActivityCount} activity record${deletedActivityCount > 1 ? 's' : ''} removed`;
                     }
-
+                    
                     res.json({ success: true, message: message });
                 });
             });
@@ -1467,8 +1532,9 @@ app.post('/api/admin-unlink-device', verifyToken, (req, res) => {
                 return res.status(404).json({ success: false, message: 'Device not found or not linked' });
             }
 
-            // Log device unlinking activity
-            logActivity(adminEmail, 'admin', 'device_unlink', `Unlinked device ${deviceId}`, deviceId, req);
+            // Log device unlinking activity (works for both admin and super admin)
+            const userRole = req.user.role; // Get actual role from token
+            logActivity(adminEmail, userRole, 'device_unlink', `Unlinked device ${deviceId}`, deviceId, req);
 
             res.json({
                 success: true,
@@ -1513,8 +1579,9 @@ app.post('/api/block-user', verifyToken, (req, res) => {
                 return res.status(404).json({ success: false, message: 'User not found' });
             }
 
-            // Log admin activity for user blocking
-            logActivity(adminEmail, 'admin', 'user_block', `Blocked user ${userEmail}`, userEmail, req);
+            // Log activity for user blocking (works for both admin and super admin)
+            const userRole = req.user.role; // Get actual role from token
+            logActivity(adminEmail, userRole, 'user_block', `Blocked user ${userEmail}`, userEmail, req);
 
             res.json({ success: true, message: 'User blocked successfully' });
         });
@@ -1555,8 +1622,9 @@ app.post('/api/unblock-user', verifyToken, (req, res) => {
                 return res.status(404).json({ success: false, message: 'User not found' });
             }
 
-            // Log admin activity for user unblocking
-            logActivity(adminEmail, 'admin', 'user_unblock', `Unblocked user ${userEmail}`, userEmail, req);
+            // Log activity for user unblocking (works for both admin and super admin)
+            const userRole = req.user.role; // Get actual role from token
+            logActivity(adminEmail, userRole, 'user_unblock', `Unblocked user ${userEmail}`, userEmail, req);
 
             res.json({ success: true, message: 'User unblocked successfully' });
         });
@@ -1636,7 +1704,7 @@ app.get('/api/superadmin-users', (req, res) => {
 });
 
 // Route for deleting an admin (super admin only)
-app.delete('/api/admins/:id', (req, res) => {
+app.delete('/api/admins/:id',verifyToken, (req, res) => {
     const adminId = req.params.id;
 
     // First, get the admin's email to unassign devices
@@ -1671,6 +1739,11 @@ app.delete('/api/admins/:id', (req, res) => {
                     return res.status(500).json({ success: false, message: 'Database error' });
                 }
 
+                // Log admin deletion activity
+                const superAdminEmail = req.user.email; // Get super admin email from token
+                const userRole = req.user.role; // Get actual role from token
+                logActivity(superAdminEmail, userRole, 'admin_delete', `Deleted admin ${adminEmail}`, adminEmail, req);
+
                 const deletedActivityCount = activityResult.affectedRows;
                 let message = 'Admin deleted successfully';
                 if (deletedActivityCount > 0) {
@@ -1684,53 +1757,93 @@ app.delete('/api/admins/:id', (req, res) => {
 });
 
 // Route for blocking an admin
-app.post('/api/block-admin', (req, res) => {
+app.post('/api/block-admin', verifyToken, (req, res) => {
     const { adminId } = req.body;
+    const superAdminEmail = req.user.email; // Get super admin email from token
 
     if (!adminId) {
         return res.status(400).json({ success: false, message: 'Admin ID is required' });
     }
 
-    const query = 'UPDATE users SET status = "blocked" WHERE id = ? AND role = "admin"';
-    db.query(query, [adminId], (err, result) => {
+    // First get admin email for logging
+    const getAdminQuery = 'SELECT email FROM users WHERE id = ? AND role = "admin"';
+    db.query(getAdminQuery, [adminId], (err, adminResults) => {
         if (err) {
-            console.error('Database error while blocking admin:', err);
+            console.error('Database error while getting admin info:', err);
             return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        if (result.affectedRows === 0) {
+        if (adminResults.length === 0) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
 
-        res.json({ success: true, message: 'Admin blocked successfully' });
+        const adminEmail = adminResults[0].email;
+
+        const query = 'UPDATE users SET status = "blocked" WHERE id = ? AND role = "admin"';
+        db.query(query, [adminId], (err, result) => {
+            if (err) {
+                console.error('Database error while blocking admin:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ success: false, message: 'Admin not found' });
+            }
+
+            // Log admin blocking activity
+            const userRole = req.user.role; // Get actual role from token
+            logActivity(superAdminEmail, userRole, 'admin_block', `Blocked admin ${adminEmail}`, adminEmail, req);
+
+            res.json({ success: true, message: 'Admin blocked successfully' });
+        });
     });
 });
 
 // Route for unblocking an admin
-app.post('/api/unblock-admin', (req, res) => {
+app.post('/api/unblock-admin', verifyToken, (req, res) => {
     const { adminId } = req.body;
+    const superAdminEmail = req.user.email; // Get super admin email from token
 
     if (!adminId) {
         return res.status(400).json({ success: false, message: 'Admin ID is required' });
     }
 
-    const query = 'UPDATE users SET status = "active" WHERE id = ? AND role = "admin"';
-    db.query(query, [adminId], (err, result) => {
+    // First get admin email for logging
+    const getAdminQuery = 'SELECT email FROM users WHERE id = ? AND role = "admin"';
+    db.query(getAdminQuery, [adminId], (err, adminResults) => {
         if (err) {
-            console.error('Database error while unblocking admin:', err);
+            console.error('Database error while getting admin info:', err);
             return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        if (result.affectedRows === 0) {
+        if (adminResults.length === 0) {
             return res.status(404).json({ success: false, message: 'Admin not found' });
         }
 
-        res.json({ success: true, message: 'Admin unblocked successfully' });
+        const adminEmail = adminResults[0].email;
+
+        const query = 'UPDATE users SET status = "active" WHERE id = ? AND role = "admin"';
+        db.query(query, [adminId], (err, result) => {
+            if (err) {
+                console.error('Database error while unblocking admin:', err);
+                return res.status(500).json({ success: false, message: 'Database error' });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({ success: false, message: 'Admin not found' });
+            }
+
+            // Log admin unblocking activity
+            const userRole = req.user.role; // Get actual role from token
+            logActivity(superAdminEmail, userRole, 'admin_unblock', `Unblocked admin ${adminEmail}`, adminEmail, req);
+
+            res.json({ success: true, message: 'Admin unblocked successfully' });
+        });
     });
 });
 
 // Route for super admin to delete any device (no restrictions)
-app.delete('/api/superadmin-delete-device/:id', (req, res) => {
+app.delete('/api/superadmin-delete-device/:id',verifyToken, (req, res) => {
     const deviceId = req.params.id;
 
     // First delete all location data for this device
@@ -1754,7 +1867,7 @@ app.delete('/api/superadmin-delete-device/:id', (req, res) => {
             if (result.affectedRows === 0) {
                 return res.status(404).json({ success: false, message: 'Device not found' });
             }
-
+            logActivity(req.user.email, req.user.role, 'device_delete', `Deleted device ${deviceId}`, deviceId, req);
             res.json({
                 success: true,
                 message: 'Device and all associated location data deleted successfully',
@@ -1815,7 +1928,7 @@ app.post('/api/update-superadmin-profile', (req, res) => {
             }
 
             // Log profile update activity
-            logActivity(superAdminEmail, 'superadmin', 'profile_update', 'Updated profile information', null, req);
+            logActivity(superAdminEmail, 'super-admin', 'profile_update', 'Updated profile information', null, req);
 
             res.json({ success: true, message: 'Profile updated successfully' });
         });
@@ -1854,7 +1967,7 @@ app.post('/api/change-superadmin-password', (req, res) => {
     }
 
     // First, get the current password from database
-    const getPasswordQuery = "SELECT password FROM users WHERE role = 'super-admin' LIMIT 1";
+    const getPasswordQuery = "SELECT * FROM users WHERE role = 'super-admin' LIMIT 1";
     db.query(getPasswordQuery, (err, results) => {
         if (err) {
             console.error('Database error while fetching super admin password:', err);
@@ -1896,7 +2009,7 @@ app.post('/api/change-superadmin-password', (req, res) => {
                     if (result.affectedRows === 0) {
                         return res.status(404).json({ success: false, message: 'Super admin not found' });
                     }
-
+                    logActivity(results[0].email, 'super-admin', 'password_change', 'You changed your password', null, req);
                     res.json({ success: true, message: 'Password changed successfully' });
                 });
             });
@@ -2212,14 +2325,65 @@ app.get('/api/activity-logs', verifyToken, (req, res) => {
         if (err) {
             console.error('Error fetching activity logs:', err);
             return res.status(500).json({ success: false, message: 'Database error' });
-        }
-
-        console.log(`Found ${results.length} activity logs for user ${userEmail}`);
+        } 
         if (startDate && endDate) {
-            console.log('Filtered activities:', results.length);
             if (results.length > 0) {
                 console.log('Sample activity timestamps:', results.slice(0, 3).map(r => r.timestamp));
             }
+        }
+
+        res.json({
+            success: true,
+            activities: results
+        });
+    });
+});
+
+// API to get super admin activity history
+app.get('/api/superadmin-activity-history', verifyToken, (req, res) => {
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+    // Only super admin can access this endpoint
+    if (userRole !== 'super-admin') {
+        return res.status(403).json({ success: false, message: 'Access denied. Super admin only.' });
+    }
+
+    const limit = parseInt(req.query.limit) || 50;
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+
+    // Define activity types to show in super admin history - super admin's own actions + administrative actions
+    const historyActivityTypes = [
+        'login', 'logout', 'profile_update', 'password_change',
+        'device_delete', 'device_unlink', 'user_delete', 'user_block', 'user_unblock',
+        'admin_delete', 'admin_block', 'admin_unblock'
+    ];
+    const activityTypesFilter = historyActivityTypes.map(() => '?').join(',');
+
+    // Build date filter
+    let dateFilter = '';
+    let dateParams = [];
+    if (startDate && endDate) {
+        dateFilter = ' AND al.timestamp BETWEEN ? AND ?';
+        dateParams = [startDate, endDate];
+    }
+
+    // Super admin can see only their own activities (like admin dashboard)
+    const query = `
+        SELECT al.*, u.name as user_name
+        FROM activity_logs al
+        LEFT JOIN users u ON al.user_email = u.email
+        WHERE al.user_email = ?
+        AND al.action_type IN (${activityTypesFilter})${dateFilter}
+        ORDER BY al.timestamp DESC
+        LIMIT ?
+    `;
+    const queryParams = [userEmail, ...historyActivityTypes, ...dateParams, limit];
+
+    db.query(query, queryParams, (err, results) => {
+        if (err) {
+            console.error('Error fetching super admin activity logs:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
         }
 
         res.json({

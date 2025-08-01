@@ -92,14 +92,46 @@
                     </div>
                 </div>
 
-                <div class="recent-activity">
-                    <h2>Recent Activity</h2>
-                    <div class="activity-list" id="recent-activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon"><i class="fas fa-info-circle"></i></div>
-                            <div class="activity-content">
-                                <p>Recent activity will be displayed here</p>
-                                <span class="activity-time">Coming soon</span>
+                <!-- Activity History Section -->
+                <div class="activity-history">
+                    <div class="activity-header">
+                        <h2><i class="fas fa-history"></i> Activity History</h2>
+                        <div class="activity-filter">
+                            <button id="activity-filter-toggle-btn" class="filter-btn">
+                                <i class="fas fa-filter"></i> Filter
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="activity-filter-options" class="activity-filter-dropdown">
+                                <div class="filter-quick-options">
+                                    <button id="activity-filter-all-btn" class="filter-option-btn active">All</button>
+                                    <button id="activity-filter-today-btn" class="filter-option-btn">Today</button>
+                                    <button id="activity-filter-yesterday-btn" class="filter-option-btn">Yesterday</button>
+                                    <button id="activity-filter-custom-btn" class="filter-option-btn">Custom</button>
+                                </div>
+                                <div id="activity-custom-date-section" class="custom-date-section">
+                                    <div class="date-inputs">
+                                        <div class="date-input-group">
+                                            <label for="activity-start-date">From:</label>
+                                            <input type="datetime-local" id="activity-start-date">
+                                        </div>
+                                        <div class="date-input-group">
+                                            <label for="activity-end-date">To:</label>
+                                            <input type="datetime-local" id="activity-end-date">
+                                        </div>
+                                    </div>
+                                    <div class="date-actions">
+                                        <button id="activity-apply-custom-filter-btn" class="apply-btn">Apply</button>
+                                        <button id="activity-cancel-custom-filter-btn" class="cancel-btn">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="activity-feed-container">
+                        <div id="activity-feed" class="activity-feed">
+                            <div class="loading-state">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading activity history...</p>
                             </div>
                         </div>
                     </div>

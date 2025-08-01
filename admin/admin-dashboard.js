@@ -1395,7 +1395,7 @@ function logout() {
 
     // Call logout API to log the activity before clearing tokens
     if (adminToken) {
-        fetch('/api/logout', {
+        fetch('/api/admin/logout', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${adminToken}`,

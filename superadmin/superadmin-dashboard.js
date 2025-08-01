@@ -52,7 +52,23 @@ function preventBackButtonAccess() {
 
 // Logout function
 function logout() {
-    // Clear only super admin-specific authentication data
+
+    fetch('/api/admin/logout', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("superAdminToken")}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Logout logged:', data);
+        })
+        .catch(error => {
+            console.error('Error logging logout:', error);
+        })
+        .finally(() => {
+            // Clear only super admin-specific authentication data
     localStorage.removeItem('superAdminEmail');
     localStorage.removeItem('superAdminToken');
     
@@ -66,6 +82,8 @@ function logout() {
     }
     
     // Redirect to login page
+        });
+    
     window.location.replace('../index.html');
 }
 
@@ -952,6 +970,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Load section-specific data
             if (section === 'dashboard') {
                 fetchDashboardStats();
+                loadActivityLogs(); // Load activity history for dashboard
+                initializeActivityFilter(); // Initialize filter functionality
             } else if (section === 'accounts') {
                 fetchAdmins();
                 fetchUsers();
@@ -1021,6 +1041,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize dashboard
     fetchDashboardStats();
+    loadActivityLogs(); // Load activity history on initial load
+    initializeActivityFilter(); // Initialize filter functionality on initial load
 });
 
 // Function to initialize profile data
@@ -1388,4 +1410,539 @@ function saveAvatarToServer(avatarData) {
         console.error('Error updating avatar:', error);
         showNotification('Error updating profile picture. Please try again.', false);
     });
+}
+
+// Activity Logs Functions for Super Admin
+let currentActivities = [];
+let currentActivityFilter = null;
+let activityFilterDropdownOpen = false;
+
+function loadActivityLogs(startDate = null, endDate = null) {
+    console.log('loadActivityLogs called with:', { startDate, endDate });
+
+    const superAdminEmail = getSuperAdminEmail();
+    const superAdminToken = getSuperAdminToken();
+
+    console.log('Super admin credentials:', { email: superAdminEmail, hasToken: !!superAdminToken });
+
+    if (!superAdminEmail || !superAdminToken) {
+        console.error('Missing super admin credentials');
+        return;
+    }
+
+    let url = `/api/superadmin-activity-history?user_email=${encodeURIComponent(superAdminEmail)}`;
+    if (startDate && endDate) {
+        url += `&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+    }
+
+    console.log('Fetching activity logs from URL:', url);
+
+    fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${superAdminToken}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Activity logs response:', data);
+        if (data.success) {
+            currentActivities = data.activities; // Store for details access
+            displayActivityLogs(data.activities);
+            // Re-initialize filter functionality after loading activities
+            initializeActivityFilter();
+        } else {
+            console.error('Error loading activity logs:', data.message);
+            // Show error in UI
+            const activityFeed = document.getElementById('activity-feed');
+            if (activityFeed) {
+                activityFeed.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Error Loading Activities</h3>
+                        <p>${data.message || 'Failed to load activity history'}</p>
+                    </div>
+                `;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error loading activity logs:', error);
+        // Show error in UI
+        const activityFeed = document.getElementById('activity-feed');
+        if (activityFeed) {
+            activityFeed.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Network Error</h3>
+                    <p>Failed to connect to server. Please try again.</p>
+                </div>
+            `;
+        }
+    });
+}
+
+function displayActivityLogs(activities) {
+    const activityFeed = document.getElementById('activity-feed');
+
+    if (!activityFeed) return;
+
+    if (!activities || activities.length === 0) {
+        activityFeed.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No Activity Found</h3>
+                <p>No activities match your current filter</p>
+            </div>
+        `;
+        return;
+    }
+
+    activityFeed.innerHTML = '';
+
+    // Remove any existing event listeners
+    activityFeed.removeEventListener('click', handleActivityClick);
+
+    activities.forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        activityItem.setAttribute('data-activity-id', activity.id);
+        activityItem.style.cursor = 'pointer';
+
+        const icon = getActivityIcon(activity.action_type);
+        const description = getActivityDescription(activity.action_type, activity.action_description, activity.target_entity);
+
+        activityItem.innerHTML = `
+            <div class="activity-icon ${activity.action_type}">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="activity-content">
+                <p class="activity-description">${description}</p>
+                <p class="activity-time">${formatTimeAgo(activity.timestamp)}</p>
+            </div>
+        `;
+
+        activityFeed.appendChild(activityItem);
+    });
+
+    // Use event delegation to handle clicks
+    activityFeed.addEventListener('click', handleActivityClick);
+}
+
+function handleActivityClick(event) {
+    // Stop event propagation to prevent conflicts
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Find the closest activity item
+    const activityItem = event.target.closest('.activity-item');
+    if (!activityItem) return;
+
+    const activityId = activityItem.getAttribute('data-activity-id');
+
+    if (activityId) {
+        // Add a small delay to ensure any existing modals are properly removed
+        setTimeout(() => {
+            showActivityDetails(parseInt(activityId));
+        }, 50);
+    }
+}
+
+function showActivityDetails(activityId) {
+    const activity = currentActivities.find(a => a.id === activityId);
+
+    if (!activity) {
+        return;
+    }
+
+    // Remove any existing activity modals only (don't interfere with other modals)
+    const existingActivityModals = document.querySelectorAll('.activity-modal');
+    existingActivityModals.forEach(modal => {
+        // Properly clean up event listeners
+        const escHandler = modal._escHandler;
+        if (escHandler) {
+            document.removeEventListener('keydown', escHandler);
+        }
+        modal.remove();
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'activity-modal';
+    modal.id = 'activity-details-modal-' + Date.now();
+    modal.style.cssText = `
+        display: flex !important;
+        position: fixed !important;
+        z-index: 10001 !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        align-items: center !important;
+        justify-content: center !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    `;
+
+    modal.innerHTML = `
+        <div class="modal-content" style="
+            background-color: white !important;
+            border-radius: 12px !important;
+            padding: 30px !important;
+            max-width: 500px !important;
+            width: 90% !important;
+            max-height: 80vh !important;
+            overflow-y: auto !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+            position: relative !important;
+        ">
+            <button class="modal-close" onclick="this.closest('.activity-modal').remove()" style="
+                position: absolute !important;
+                top: 15px !important;
+                right: 20px !important;
+                background: none !important;
+                border: none !important;
+                font-size: 24px !important;
+                color: #999 !important;
+                cursor: pointer !important;
+                padding: 5px !important;
+                line-height: 1 !important;
+            ">&times;</button>
+            <h3 style="margin: 0 0 25px 0 !important; color: #333 !important; font-size: 24px !important;">Activity Details</h3>
+            <div class="activity-details">
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">Action Type:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.action_type}</span>
+                </div>
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">Description:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.action_description}</span>
+                </div>
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">User:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.user_name || activity.user_email}</span>
+                </div>
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">Role:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.user_role}</span>
+                </div>
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">Timestamp:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${new Date(activity.timestamp).toLocaleString()}</span>
+                </div>
+                ${activity.target_entity ? `
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">Target:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.target_entity}</span>
+                </div>
+                ` : ''}
+                ${activity.ip_address ? `
+                <div class="activity-detail-row" style="display: flex !important; justify-content: space-between !important; padding: 12px 0 !important; border-bottom: 1px solid #f5f5f5 !important;">
+                    <strong style="color: #555 !important; min-width: 120px !important;">IP Address:</strong>
+                    <span style="color: #6c757d !important; text-align: right !important;">${activity.ip_address}</span>
+                </div>
+                ` : ''}
+            </div>
+            <div class="modal-actions" style="margin-top: 25px !important; display: flex !important; justify-content: flex-end !important;">
+                <button class="cancel-btn" onclick="this.closest('.activity-modal').remove()" style="
+                    background-color: #6c757d !important;
+                    color: white !important;
+                    border: none !important;
+                    padding: 10px 20px !important;
+                    border-radius: 6px !important;
+                    cursor: pointer !important;
+                    font-size: 14px !important;
+                ">Close</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Force a reflow to ensure the modal is rendered
+    modal.offsetHeight;
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    // Close modal with Escape key and store handler for cleanup
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    modal._escHandler = escHandler; // Store for cleanup
+    document.addEventListener('keydown', escHandler);
+
+    // Also clean up when modal is removed
+    const originalRemove = modal.remove;
+    modal.remove = function() {
+        document.removeEventListener('keydown', escHandler);
+        originalRemove.call(this);
+    };
+}
+
+// Initialize activity filter functionality
+function initializeActivityFilter() {
+    const filterToggleBtn = document.getElementById('activity-filter-toggle-btn');
+    const filterOptions = document.getElementById('activity-filter-options');
+    const allBtn = document.getElementById('activity-filter-all-btn');
+    const todayBtn = document.getElementById('activity-filter-today-btn');
+    const yesterdayBtn = document.getElementById('activity-filter-yesterday-btn');
+    const customBtn = document.getElementById('activity-filter-custom-btn');
+    const customSection = document.getElementById('activity-custom-date-section');
+    const applyCustomBtn = document.getElementById('activity-apply-custom-filter-btn');
+    const cancelCustomBtn = document.getElementById('activity-cancel-custom-filter-btn');
+
+    if (!filterToggleBtn || !filterOptions) {
+        return;
+    }
+
+    // Remove existing event listeners to prevent duplicates
+    const newFilterToggleBtn = filterToggleBtn.cloneNode(true);
+    filterToggleBtn.parentNode.replaceChild(newFilterToggleBtn, filterToggleBtn);
+
+    // Toggle filter dropdown
+    newFilterToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activityFilterDropdownOpen = !activityFilterDropdownOpen;
+        filterOptions.style.display = activityFilterDropdownOpen ? 'block' : 'none';
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!newFilterToggleBtn.contains(e.target) && !filterOptions.contains(e.target)) {
+            activityFilterDropdownOpen = false;
+            filterOptions.style.display = 'none';
+            if (customSection) customSection.style.display = 'none';
+        }
+    });
+
+    // Filter button event listeners - clone to remove existing listeners
+    if (allBtn) {
+        const newAllBtn = allBtn.cloneNode(true);
+        allBtn.parentNode.replaceChild(newAllBtn, allBtn);
+        newAllBtn.addEventListener('click', () => {
+            applyActivityFilter('all');
+            closeActivityFilterDropdown();
+        });
+    }
+
+    if (todayBtn) {
+        const newTodayBtn = todayBtn.cloneNode(true);
+        todayBtn.parentNode.replaceChild(newTodayBtn, todayBtn);
+        newTodayBtn.addEventListener('click', () => {
+            applyActivityFilter('today');
+            closeActivityFilterDropdown();
+        });
+    }
+
+    if (yesterdayBtn) {
+        const newYesterdayBtn = yesterdayBtn.cloneNode(true);
+        yesterdayBtn.parentNode.replaceChild(newYesterdayBtn, yesterdayBtn);
+        newYesterdayBtn.addEventListener('click', () => {
+            applyActivityFilter('yesterday');
+            closeActivityFilterDropdown();
+        });
+    }
+
+    if (customBtn) {
+        const newCustomBtn = customBtn.cloneNode(true);
+        customBtn.parentNode.replaceChild(newCustomBtn, customBtn);
+        newCustomBtn.addEventListener('click', () => {
+            showActivityCustomDateInputs();
+        });
+    }
+
+    if (applyCustomBtn) {
+        const newApplyCustomBtn = applyCustomBtn.cloneNode(true);
+        applyCustomBtn.parentNode.replaceChild(newApplyCustomBtn, applyCustomBtn);
+        newApplyCustomBtn.addEventListener('click', () => {
+            applyActivityCustomFilter();
+            closeActivityFilterDropdown();
+        });
+    }
+
+    if (cancelCustomBtn) {
+        const newCancelCustomBtn = cancelCustomBtn.cloneNode(true);
+        cancelCustomBtn.parentNode.replaceChild(newCancelCustomBtn, cancelCustomBtn);
+        newCancelCustomBtn.addEventListener('click', () => {
+            if (customSection) customSection.style.display = 'none';
+        });
+    }
+}
+
+function getActivityIcon(actionType) {
+    const iconMap = {
+        'login': 'fa-sign-in-alt',
+        'logout': 'fa-sign-out-alt',
+        'device_delete': 'fa-trash',
+        'device_unlink': 'fa-unlink',
+        'user_delete': 'fa-user-times',
+        'user_block': 'fa-user-slash',
+        'user_unblock': 'fa-user-check',
+        'admin_delete': 'fa-user-times',
+        'admin_block': 'fa-user-slash',
+        'admin_unblock': 'fa-user-check',
+        'profile_update': 'fa-user-edit',
+        'password_change': 'fa-key'
+    };
+    return iconMap[actionType] || 'fa-info-circle';
+}
+
+function getActivityDescription(actionType, originalDescription, targetEntity) {
+    // For super admin view, show their own activities + administrative actions
+    const descriptions = {
+        'login': 'You logged in successfully',
+        'logout': 'You logged out',
+        'profile_update': 'You updated your profile',
+        'password_change': 'You changed your password',
+        'device_delete': `You deleted device ${targetEntity || ''}`,
+        'device_unlink': `You unlinked device ${targetEntity || ''}`,
+        'user_delete': `You deleted user ${targetEntity || ''}`,
+        'user_block': `You blocked user ${targetEntity || ''}`,
+        'user_unblock': `You unblocked user ${targetEntity || ''}`,
+        'admin_delete': `You deleted admin ${targetEntity || ''}`,
+        'admin_block': `You blocked admin ${targetEntity || ''}`,
+        'admin_unblock': `You unblocked admin ${targetEntity || ''}`
+    };
+
+    return descriptions[actionType] || originalDescription || 'Unknown activity';
+}
+
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - activityTime) / 1000);
+
+    if (diffInSeconds < 60) {
+        return 'just now';
+    } else if (diffInSeconds < 3600) {
+        const minutes = Math.floor(diffInSeconds / 60);
+        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+        const hours = Math.floor(diffInSeconds / 3600);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 604800) {
+        const days = Math.floor(diffInSeconds / 86400);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else {
+        return activityTime.toLocaleDateString();
+    }
+}
+
+function applyActivityFilter(filterType) {
+    currentActivityFilter = filterType;
+
+    // Update active button
+    document.querySelectorAll('.filter-option-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`activity-filter-${filterType}-btn`).classList.add('active');
+
+    const now = new Date();
+    let startDate = null;
+    let endDate = null;
+
+    switch (filterType) {
+        case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
+            break;
+        case 'yesterday':
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate()).toISOString();
+            endDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59).toISOString();
+            break;
+        case 'all':
+        default:
+            startDate = null;
+            endDate = null;
+            break;
+    }
+
+    loadActivityLogs(startDate, endDate);
+}
+
+function showActivityCustomDateInputs() {
+    const customSection = document.getElementById('activity-custom-date-section');
+
+    if (customSection) {
+        customSection.style.display = 'block';
+
+        // Only set default values if inputs are empty
+        const startInput = document.getElementById('activity-start-date');
+        const endInput = document.getElementById('activity-end-date');
+
+        if (startInput && endInput) {
+            // Only set default values if the inputs are empty
+            if (!startInput.value) {
+                const now = new Date();
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                startInput.value = startOfDay.toISOString().slice(0, 16);
+            }
+
+            if (!endInput.value) {
+                const now = new Date();
+                endInput.value = now.toISOString().slice(0, 16);
+            }
+        }
+    }
+}
+
+function applyActivityCustomFilter() {
+    const startInput = document.getElementById('activity-start-date');
+    const endInput = document.getElementById('activity-end-date');
+
+    if (!startInput || !endInput) {
+        console.error('Date inputs not found');
+        return;
+    }
+
+    const startDateStr = startInput.value;
+    const endDateStr = endInput.value;
+
+    if (!startDateStr || !endDateStr) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    if (startDate > endDate) {
+        alert('Start date cannot be later than end date');
+        return;
+    }
+
+    document.querySelectorAll('.filter-option-btn').forEach(btn => btn.classList.remove('active'));
+    const customBtn = document.getElementById('activity-filter-custom-btn');
+    if (customBtn) {
+        customBtn.classList.add('active');
+    }
+
+    currentActivityFilter = 'custom';
+
+    // Do NOT use toISOString() here if your backend expects local time
+    // Either send as-is, or format properly
+    const startLocal = startDateStr; // already in local timezone format
+    const endLocal = endDateStr;
+
+    loadActivityLogs(startLocal, endLocal);  // adjust this if your backend expects ISO
+}
+
+function closeActivityFilterDropdown() {
+    const filterOptions = document.getElementById('activity-filter-options');
+    const customSection = document.getElementById('activity-custom-date-section');
+
+    if (filterOptions) filterOptions.style.display = 'none';
+    if (customSection) customSection.style.display = 'none';
+    activityFilterDropdownOpen = false;
 }
