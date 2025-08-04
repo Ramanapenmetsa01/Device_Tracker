@@ -360,6 +360,16 @@ app.post("/checking",(req,res)=>{
         res.status(401).json({ success: false, message: 'Invalid token.' });
     }
 })
+//Route for user logout
+app.post('/api/logout', verifyToken, (req, res) => {
+    const userEmail = req.user.email;
+    const userRole = req.user.role;
+
+    // Log logout activity
+    logActivity(userEmail, userRole, 'logout', 'User logged out', null, req);
+
+    res.json({ success: true, message: 'Logged out successfully' });
+});
 // Route for admin logout
 app.post('/api/admin/logout', verifyToken, (req, res) => {
     const userEmail = req.user.email;
