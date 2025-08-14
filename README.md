@@ -11,12 +11,17 @@ A comprehensive device tracking system with real-time location monitoring, user 
 - **Individual session management** (logout from one account doesn't affect others)
 - **Profile management** with image upload functionality
 
+### Login Dashboard
+<img width="2879" height="1349" alt="Screenshot 2025-08-04 232557" src="https://github.com/user-attachments/assets/b5a95451-5a3c-4a47-9480-fbcbd83defb5" />
+
 ### 📱 Device Management
 - **QR code generation** for device IDs
 - **Device linking/unlinking** to users
 - **Bulk device creation** for admins
 - **Device assignment tracking** with timestamps
 - **Validation** for duplicate device IDs
+- <img width="2879" height="1343" alt="Screenshot 2025-08-02 222809" src="https://github.com/user-attachments/assets/5516ddcd-0598-4523-9b4a-195de7343167" />
+
 
 ### 🗺️ Location Tracking
 - **Real-time location tracking** using Leaflet.js maps
@@ -24,6 +29,8 @@ A comprehensive device tracking system with real-time location monitoring, user 
 - **Location history** with date/time filtering
 - **API-based location updates** (URL parameters or JSON)
 - **Automatic data cleanup** when devices are unlinked
+- <img width="2879" height="1349" alt="Screenshot 2025-08-02 222943" src="https://github.com/user-attachments/assets/e65e3c87-53a6-43db-8e6a-5605a8ce6886" />
+
 
 ### 📊 Activity Monitoring
 - **Comprehensive activity logging** for all user actions
@@ -38,12 +45,16 @@ A comprehensive device tracking system with real-time location monitoring, user 
 - **Statistics overview** (user count, device count, assignments)
 - **Activity monitoring** with advanced filtering
 - **Profile management** for admins
+- <img width="2878" height="1348" alt="Screenshot 2025-08-02 222704" src="https://github.com/user-attachments/assets/5bdf3315-9fdb-4cfb-a0c1-19ec60f71220" />
+
 
 ### 👑 Super Admin Features
 - **Complete system oversight** with all admin features
 - **Admin account management** (view, delete admins)
 - **System-wide statistics** and monitoring
 - **Separate admin and user management interfaces
+- <img width="2879" height="1346" alt="Screenshot 2025-08-04 233557" src="https://github.com/user-attachments/assets/06ce7146-fb36-4f8f-b059-e7d2e4f5a853" />
+
 
 ## 🚀 Getting Started
 
